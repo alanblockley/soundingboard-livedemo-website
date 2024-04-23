@@ -1,0 +1,18 @@
+# Cloudformation template to create
+# - ECR Repository
+# This is a prerequisite to the ECS stack
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: ECR Repo
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name
+    Default: "my-web-app"
+
+Resources:
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub "${ProjectName}-repo"

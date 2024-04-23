@@ -1,8 +1,3 @@
-FROM ubuntu:22.04
+FROM --platform=arm64 public.ecr.aws/docker/library/httpd:latest
 
-RUN apt-get update && apt-get -y upgrade
-RUN apt-get install -y apache2
-
-EXPOSE 80
-
-CMD [“apache2ctl”, “-D”, “FOREGROUND”]
+COPY ./html/ /usr/local/apache2/htdocs/

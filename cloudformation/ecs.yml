@@ -1,0 +1,73 @@
+# Cloudformation template to create
+# - ECS Cluster
+# - ECS Task Definition
+# - ECS Service
+# - Target Group
+# 
+# Make you've deployed ecr.yml and build your container first.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: ECS Cluster, Task Definition, Service, Load Balancer, Target Group
+Parameters:
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC to deploy to
+  Subnet:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet to deploy to
+  ContainerPort:
+    Type: Number
+    Description: Port to expose on container
+  ContainerCpu:
+    Type: Number
+    Description: CPU units to allocate to container
+  ContainerMemory:
+    Type: Number
+    Description: Memory units to allocate to container
+  DesiredCount:
+    Type: Number
+    Description: Number of containers to run
+  HealthCheckPath:
+    Type: String
+    Description: Path to check for health
+  ECRImage:
+    Type: String
+    Description: ECR Image to run
+
+Resources:
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${AWS::StackName}-cluster
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${AWS::StackName}-task
+      Cpu: !Ref ContainerCpu
+      Memory: !Ref ContainerMemory
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: !Sub ${AWS::StackName}-container
+          Image: !Ref ECRImage
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -f http://localhost || exit 1
+            Interval: 5
+            Retries: 3
+            StartPeriod: 10
+            Timeout: 2
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref DesiredCount
